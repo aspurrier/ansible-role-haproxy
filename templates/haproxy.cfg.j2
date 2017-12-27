@@ -17,7 +17,9 @@ global
 defaults
   log global
   mode  http
+{% if haproxy_frontend_mode == 'http' %}
   option  httplog
+{% endif %}
   option  dontlognull
 {% if haproxy_version == '1.4' %}
         contimeout 5000
@@ -46,11 +48,17 @@ frontend {{ haproxy_frontend_name }}
 backend {{ haproxy_backend_name }}
     mode {{ haproxy_backend_mode }}
     balance {{ haproxy_backend_balance_method }}
+  {% if haproxy_backend_mode == 'http' %}
     option forwardfor
+  {% endif %}
 {% if haproxy_backend_httpchk != '' %}
     option httpchk {{ haproxy_backend_httpchk }}
-{% endif %}
     cookie SERVERID insert indirect
+{% endif %}
 {% for backend in haproxy_backend_servers %}
+  {% if haproxy_backend_mode == 'http' %}
     server {{ backend.name }} {{ backend.address }} cookie {{ backend.name }} check
+  {% else %}
+    server {{ backend.name }} {{ backend.address }} check
+  {% endif %}
 {% endfor %}
